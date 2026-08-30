@@ -81,7 +81,7 @@ python moss_web.py      # :8899, Web 层
 | `JOBS_DIR` | `./moss_jobs` | 任务/音频存储目录 |
 | `PORT` | `8899`/`8003` | 监听端口 |
 
-> 详见 [DEPLOYMENT.md](DEPLOYMENT.md) 与 [ARCHITECTURE.md](ARCHITECTURE.md)。
+> 详见 [DEPLOYMENT.md](DEPLOYMENT.md)、[ARCHITECTURE.md](ARCHITECTURE.md) 与 [DESIGN-RATIONALE.md](DESIGN-RATIONALE.md)。
 
 ## 目录结构
 
@@ -95,7 +95,8 @@ moss-transcribe-deploy/
 ├── systemd/                  # systemd unit 模板
 ├── requirements.txt          # Python 依赖
 ├── DEPLOYMENT.md             # 换设备完整部署指南
-└── ARCHITECTURE.md           # 技术路线/设计细节
+├── ARCHITECTURE.md           # 技术路线/设计细节
+└── DESIGN-RATIONALE.md       # 设计依据/为什么这么设计
 ```
 
 ## 许可
