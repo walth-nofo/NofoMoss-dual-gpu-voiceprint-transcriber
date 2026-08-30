@@ -4,7 +4,7 @@
 本仓库为**自研服务层**, 提供: 长音频分段、双 GPU 并行、实时进度、跨段说话人统一(声纹聚类)、音频逐段播放、Web UI。
 
 > 上游底层模型/推理: [OpenMOSS/MOSS-Transcribe-Diarize](https://github.com/OpenMOSS/MOSS-Transcribe-Diarize)
-> 本仓库只含自研的服务层 + 部署配置, **不含任何录音或转写数据**。
+> 本仓库只含自研的服务层 + 部署配置。
 
 ## 核心功能
 
