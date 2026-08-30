@@ -1,0 +1,23 @@
+[Unit]
+Description=MOSS-Transcribe-Diarize ASR service (FastAPI, :8003)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# >>> 部署时替换为你的机器路径 <<<
+# 例: venv=/opt/moss-venv, 代码=/home/<youruser>/moss, 上游repo=/opt/MOSS-Transcribe-Diarize
+WorkingDirectory=/opt/MOSS-Transcribe-Diarize
+Environment=PATH=/opt/moss-venv/bin:/usr/local/bin:/usr/bin:/bin
+Environment=HF_ENDPOINT=https://hf-mirror.com
+Environment=PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+Environment=MOSS_ATTN_IMPL=sdpa
+Environment=MOSS_WORKER_DEVICES=0,1
+Environment=PORT=8003
+ExecStart=/opt/moss-venv/bin/python /home/<youruser>/moss/moss_server.py
+Restart=on-failure
+RestartSec=15
+TimeoutStartSec=0
+
+[Install]
+WantedBy=default.target
