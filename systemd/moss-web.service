@@ -1,0 +1,22 @@
+[Unit]
+Description=MOSS transcription web UI (:8899)
+After=network-online.target model-router.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+# >>> 部署时替换为你的机器路径 <<<
+# 例: venv=/opt/moss-venv, 代码=/home/<youruser>/moss
+Environment=PATH=/opt/moss-venv/bin:/usr/local/bin:/usr/bin:/bin
+Environment=ROUTER_URL=http://127.0.0.1:8000
+Environment=MOSS_URL=http://127.0.0.1:8003
+Environment=MAX_SINGLE_SEC=810
+Environment=MOSS_WORKER_DEVICES=0,1
+Environment=JOBS_DIR=/home/<youruser>/moss/moss_jobs
+Environment=PORT=8899
+ExecStart=/opt/moss-venv/bin/python /home/<youruser>/moss/moss_web.py
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=default.target
