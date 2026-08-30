@@ -1,10 +1,10 @@
-# 双卡声纹会议转写引擎
+# Nofo 双卡声纹本地录音转写工具
 
-> Diarized Meeting Transcriber (Dual-GPU)
+> Nofo Diarized Local Recorder Transcriber (Dual-GPU)
 
-本地部署服务层 —— 基于 MOSS-Transcribe-Diarize，长音频分段、双卡并行推理、声纹聚类跨段统一说话人、Web UI。
+基于 OpenMOSS 开源的 MOSS-Transcribe-Diarize 模型（0.9B）的自研服务层 —— 长音频分段、双卡并行推理、声纹聚类跨段统一说话人、Web UI。
 
-用两张消费级显卡跑 0.9B 语音模型，把长会议录音转写成带统一说话人标签的文本，全程本地、不上传。
+用两张消费级显卡跑 0.9B 语音模型，把本地录音转写成带统一说话人标签的文本，全程本地、不上传。
 
 > 上游底层模型/推理: [OpenMOSS/MOSS-Transcribe-Diarize](https://github.com/OpenMOSS/MOSS-Transcribe-Diarize)
 > 本仓库只含自研的服务层 + 部署配置, **不含任何录音或转写数据**。
@@ -30,7 +30,7 @@ MOSS 自身具备基于文本逻辑的角色识别, 但分段后各段独立推�
 
 ## 界面预览
 
-![双卡声纹会议转写 Web UI](docs/screenshots/web-ui.jpg)
+![Nofo 双卡声纹本地录音转写工具 Web UI](docs/screenshots/web-ui.jpg)
 
 ## 架构总览
 
