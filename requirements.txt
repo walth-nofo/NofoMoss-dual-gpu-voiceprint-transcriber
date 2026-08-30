@@ -1,0 +1,20 @@
+# 依赖说明 (安装前请看):
+# 1) torch / torchaudio 从 PyPI 装到的是 CPU 版。需要 GPU 请先按 https://pytorch.org
+#    的指引单独安装对应 CUDA 版本, 再装本文件其余依赖。
+# 2) 上游模块 moss_transcribe_diarize 不在下面清单里, 需 clone 上游仓库后
+#    在其中执行 pip install -e . (见 DEPLOYMENT.md 第 3 节)。
+
+fastapi==0.141.1
+uvicorn==0.52.4
+numpy==2.5.2
+scipy==1.18.1
+scikit-learn==1.9.0
+soundfile==0.14.0
+librosa==1.0.0
+resemblyzer==0.1.4
+speechbrain==1.1.1
+transformers==5.16.1
+torch==2.13.0
+torchaudio==2.11.0
+httpx==0.28.1
+python-multipart==0.0.32
