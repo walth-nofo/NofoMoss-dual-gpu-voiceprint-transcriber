@@ -1,0 +1,29 @@
+# 版本控制忽略 — 只提交源码/文档, 绝不提交数据/环境/临时文件
+
+# 数据 (绝不上传)
+moss_jobs/
+*.wav
+*.mp3
+*.flac
+*.m4a
+*.jsonl
+
+# 声纹模型缓存 & 诊断/测试脚本 (本机实验产物, 不属于发布)
+_sb_ecapa/
+_sb_*.py
+_test_*.py
+_sca*.py
+_diag*.py
+__pycache__/
+*.pyc
+
+# 临时/备份
+*.bak
+*_bak_*
+*.log
+/tmp/*
+.DS_Store
+
+# 环境
+.venv/
+venv/
