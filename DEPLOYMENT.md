@@ -1,7 +1,7 @@
 # 部署指南 (换设备复用)
 
 本指南适用于:**在一台新的 Linux + NVIDIA GPU 机器上, 快速部署这套 MOSS 转写系统**。
-基于本仓库(自研服务层) + 上游 MOSS-Transcribe-Diarize。
+基于本仓库(封装服务层) + 上游 MOSS-Transcribe-Diarize。
 
 ## 0. 前提
 
