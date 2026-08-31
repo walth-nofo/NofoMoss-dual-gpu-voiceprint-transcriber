@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# publish.sh — 在你的终端运行, 把本自研仓库推送到 GitHub。
+# publish.sh — 在你的终端运行, 把本仓库推送到 GitHub。
 # 凭据只在你的终端输入, 不经过任何中间方 / 不留在 shell history。
 set -euo pipefail
 
