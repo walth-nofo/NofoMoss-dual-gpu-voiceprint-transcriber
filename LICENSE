@@ -177,7 +177,7 @@ limitations under the License.
 ---
 
 NOTICE:
-- 本仓库为**自研服务层**(moss_web.py / moss_server.py / voiceprint_helper.py / 前端)。
+- 本仓库为**封装服务层**(moss_web.py / moss_server.py / voiceprint_helper.py / 前端)。
 - 上游模型与推理: [OpenMOSS/MOSS-Transcribe-Diarize](https://github.com/OpenMOSS/MOSS-Transcribe-Diarize),
   遵循其原始 Apache-2.0 许可; 本仓库只引用其接口, 不含其源码/权重。
 - 本仓库不含任何录音、转写文本、说话人身份等用户数据。
