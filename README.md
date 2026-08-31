@@ -1,13 +1,13 @@
-# Nofo 双卡声纹本地录音转写工具
+# NofoMoss 双卡声纹本地录音转写工具
 
-> Nofo Diarized Local Recorder Transcriber (Dual-GPU)
+> NofoMoss Dual-GPU Voiceprint Transcriber
 
-基于 OpenMOSS 开源的 MOSS-Transcribe-Diarize 模型（0.9B）的自研服务层 —— 长音频分段、双卡并行推理、声纹聚类跨段统一说话人、Web UI。
+基于 OpenMOSS 开源的 MOSS-Transcribe-Diarize 模型（0.9B）的封装服务层 —— 长音频分段、双卡并行推理、声纹聚类跨段统一说话人、Web UI。
 
 用两张消费级显卡跑 0.9B 语音模型，把本地录音转写成带统一说话人标签的文本，全程本地、不上传。
 
 > 上游底层模型/推理: [OpenMOSS/MOSS-Transcribe-Diarize](https://github.com/OpenMOSS/MOSS-Transcribe-Diarize)
-> 本仓库只含自研的服务层 + 部署配置, **不含任何录音或转写数据**。
+> 本仓库只含服务层 + 部署配置, **不含任何录音或转写数据**。
 
 ## 设计背景
 
@@ -30,7 +30,7 @@ MOSS 自身具备基于文本逻辑的角色识别, 但分段后各段独立推�
 
 ## 界面预览
 
-![Nofo 双卡声纹本地录音转写工具 Web UI](docs/screenshots/web-ui.jpg)
+![NofoMoss 双卡声纹本地录音转写工具 Web UI](docs/screenshots/web-ui.jpg)
 
 ## 架构总览
 
@@ -103,7 +103,7 @@ python moss_web.py      # :8899, Web 层
 ## 目录结构
 
 ```
-moss-transcribe-deploy/
+NofoMoss-dual-gpu-voiceprint-transcriber/
 ├── moss_web.py               # Web 层 (分段/调度/声纹管线/进度/UI)
 ├── moss_server.py            # 双卡 ASR 服务
 ├── voiceprint_helper.py      # 声纹聚类 (跨段说话人统一)
@@ -121,5 +121,5 @@ moss-transcribe-deploy/
 
 ## 许可
 
-- 自研服务层: 见 LICENSE (与上游共同遵守)
+- 服务层: 见 LICENSE (与上游共同遵守)
 - 上游模型: 遵循 MOSS-Transcribe-Diarize 原始许可
