@@ -1,0 +1,1413 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NofoMoss 双卡声纹本地录音转写工具</title>
+<style>
+  :root{
+    --bg:#F7F6F3;
+    --surface:#FFFFFF;
+    --surface-2:#FBFAF8;
+    --surface-3:#F1EFEA;
+    --border:#E7E4DD;
+    --border-2:#D4D0C6;
+    --text:#151518;
+    --text-2:#5A5A62;
+    --text-3:#8B8B93;
+    --accent:#3D4552;
+    --accent-soft:rgba(61,69,82,.07);
+    --primary:#151518;
+    --primary-fg:#FFFFFF;
+    --success:#2F7A55;
+    --warning:#8A6420;
+    --danger:#A34F4F;
+    --radius-xl:16px;
+    --radius-lg:14px;
+    --radius-md:11px;
+    --radius-sm:10px;
+  }
+  [data-theme="dark"]{
+    --bg:#0B0B0D;
+    --surface:#141417;
+    --surface-2:#1B1B1F;
+    --surface-3:#242429;
+    --border:#242428;
+    --border-2:#33333A;
+    --text:#F2F2F5;
+    --text-2:#A2A2AC;
+    --text-3:#71717B;
+    --accent:#A8AFC0;
+    --accent-soft:rgba(168,175,192,.13);
+    --primary:#F2F2F5;
+    --primary-fg:#0B0B0D;
+    --success:#6FA184;
+    --warning:#C2A063;
+    --danger:#C47575;
+  }
+  [data-theme="dark"] .phone{
+    box-shadow:0 18px 50px rgba(0,0,0,.55);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue",sans-serif;
+    background:var(--bg);color:var(--text);min-height:100vh;
+    -webkit-font-smoothing:antialiased;padding:20px 14px 40px;
+  }
+  .phone{
+    width:100%;max-width:460px;margin:0 auto;background:var(--surface);
+    border:1px solid var(--border);border-radius:var(--radius-xl);
+    overflow:hidden;
+    box-shadow:0 12px 42px rgba(0,0,0,.06);
+  }
+  .app{padding:26px 22px 34px}
+
+  .topbar{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:4px}
+  .brand h1{font-size:20px;font-weight:600;letter-spacing:.2px;line-height:1.25}
+  .brand .sub{font-size:12.5px;color:var(--text-3);margin-top:4px;font-weight:400}
+  .top-actions{display:flex;gap:8px;position:relative}
+  .icon-btn{width:34px;height:34px;border-radius:10px;background:var(--surface-2);border:1px solid var(--border);display:grid;place-items:center;color:var(--text-2);font-size:15px;cursor:pointer;transition:.2s}
+  .icon-btn:hover{border-color:var(--border-2);color:var(--text)}
+
+  .popover{display:none;position:absolute;right:0;top:44px;z-index:20;width:228px;
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);
+    padding:14px;box-shadow:0 14px 40px rgba(0,0,0,.16)}
+  .popover.open{display:block}
+  .pop-title{font-size:12.5px;font-weight:600;color:var(--text-2);letter-spacing:.4px;margin-bottom:12px}
+  .pop-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+  .pop-row:last-child{margin-bottom:0}
+  .pop-row>span{font-size:12.5px;color:var(--text)}
+  .seg-group{display:flex;gap:4px}
+  .seg-btn{font-size:12.5px;padding:5px 10px;border-radius:7px;border:1px solid var(--border);background:var(--surface-2);color:var(--text-2);cursor:pointer;transition:.15s}
+  .seg-btn:hover{border-color:var(--border-2)}
+  .seg-btn.on{background:var(--text);color:var(--bg);border-color:var(--text)}
+  .toggle{width:40px;height:23px;border-radius:12px;border:1px solid var(--border-2);background:var(--surface-3);position:relative;cursor:pointer;transition:.2s;flex-shrink:0}
+  .toggle i{position:absolute;top:2px;left:2px;width:17px;height:17px;border-radius:50%;background:var(--surface);border:1px solid var(--border);transition:.2s}
+  .toggle.on{background:var(--accent);border-color:var(--accent)}
+  .toggle.on i{left:19px;border-color:transparent}
+
+  .tags{display:flex;flex-wrap:wrap;gap:7px;margin:16px 0 22px}
+  .tag{font-size:12.5px;color:var(--text-2);background:var(--surface-2);border:1px solid var(--border);padding:4px 9px;border-radius:6px}
+
+  .section-title{font-size:13.5px;font-weight:600;color:var(--text-2);margin-bottom:12px;letter-spacing:.4px}
+
+  .block{margin-top:22px}
+  .block:first-child{margin-top:0}
+
+  /* 任务卡片：三个卡片等高 + 比原来高约1/4 (用户要求2) */
+  .fixed-card{
+    background:var(--surface-2);
+    border:1px solid var(--border);
+    border-radius:var(--radius-lg);
+    padding:18px;
+    overflow:hidden;
+    position:relative;
+    /* 统一卡片高度; 上传/当前任务 不内部滚动, 一眼看完 (任务队列卡片内列表超出时用 #jobs 滚动) */
+    height:340px;
+    display:flex;
+    flex-direction:column;
+  }
+  .card-scroll{
+    overflow:hidden;             /* 上传/当前任务: 内容按需撑开, 不出现内部滚动 */
+    display:flex;
+    flex-direction:column;
+    flex:1;
+    min-height:0;
+  }
+  .card-scroll::-webkit-scrollbar{width:5px}
+  .card-scroll::-webkit-scrollbar-thumb{background:var(--border-2);border-radius:3px}
+  /* 任务队列列表: 超出卡片高度时唤出内部滚轮 */
+  #jobs{
+    overflow-y:auto;
+    flex:1;
+    min-height:0;
+    -webkit-overflow-scrolling:touch;
+  }
+  #jobs::-webkit-scrollbar{width:5px}
+  #jobs::-webkit-scrollbar-thumb{background:var(--border-2);border-radius:3px}
+
+  /* 选文件区: 加号按钮+说明文本, 居中, 加高一点 */
+  .drop.picker{
+    border:1.5px dashed var(--border-2);border-radius:var(--radius-md);
+    background:var(--surface);padding:8px;transition:.2s;cursor:pointer;   /* 缩矮: padding 14→8 */
+    flex:1;display:flex;align-items:center;justify-content:center;
+  }
+  .drop.picker:hover,.drop.picker.drag{border-color:var(--accent);background:var(--accent-soft)}
+  .picker-btn{
+    display:flex;flex-direction:column;align-items:center;gap:4px;   /* gap 8→4 */
+    width:100%;text-align:center;cursor:pointer;user-select:none;
+  }
+  .picker-icon{
+    width:56px;height:56px;display:grid;place-items:center;color:var(--text-2);
+    border-radius:14px;transition:.2s;
+  }
+  .drop.picker:hover .picker-icon,.drop.picker:focus-visible .picker-btn .picker-icon{color:var(--accent)}
+  .picker-hint{font-size:12.5px;color:var(--text-3);line-height:1.4}
+
+  /* 页面顶部提示 (提到最上方: 说话人分离字段下一行) */
+  .upload-note{margin:-8px 0 16px;font-size:12.5px;color:var(--text-3);letter-spacing:.2px;line-height:1.5}
+
+  /* 待上传/下一步任务列表 (虚线框, 固定大小, 内部滚动, 不盖下方按钮) */
+  #pendingBox{
+    margin-top:12px;border:1.5px dashed var(--border-2);border-radius:var(--radius-sm);
+    background:var(--surface);padding:10px 12px;
+  }
+  .pending-head{font-size:12.5px;font-weight:600;color:var(--text-3);letter-spacing:.3px;margin-bottom:6px}
+  .pending-list{height:92px;overflow-y:auto;display:flex;flex-direction:column;gap:5px;-webkit-overflow-scrolling:touch}
+
+  .pending-item{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 9px}
+  .pending-item .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pending-item .mt{font-size:12.5px;color:var(--text-3);flex-shrink:0}
+  .pending-item .rm{color:var(--danger);cursor:pointer;flex-shrink:0;font-size:15px;line-height:1;padding:1px 4px}
+  .pending-item .rm:hover{color:var(--danger)}
+  .pending-item .q{font-size:12.5px;color:var(--warning);flex-shrink:0}
+  .pending-list::-webkit-scrollbar{width:5px}
+  .pending-list::-webkit-scrollbar-thumb{background:var(--border-2);border-radius:3px}
+  .btn-row{margin-top:auto;padding-top:12px;display:flex;gap:10px}  /* 顶到卡片底部, 消除下方留白 */
+  #uploadBlock,#activeBlock{display:flex;flex-direction:column;flex:1;min-height:0}
+  button.b{flex:1;padding:11px 0;font-size:13.5px;font-weight:600;border-radius:var(--radius-sm);cursor:pointer;transition:.15s;border:1px solid transparent;text-align:center}
+  #go{background:var(--text);color:var(--bg)}
+  #go:hover{opacity:.9}
+  #go:disabled{background:var(--surface-3);color:var(--text-3);cursor:not-allowed}
+  #clear{background:transparent;border:1px solid var(--border-2);color:var(--text-2)}
+  #clear:hover{border-color:var(--danger);color:var(--danger)}
+
+  .card-top{display:flex;justify-content:flex-end;gap:8px;margin-bottom:12px;align-items:center}
+  .card-top .icon-btn.sm{width:30px;height:30px}
+  .card-top .icon-btn.sm svg{width:14px;height:14px}
+
+  .badge{font-size:12.5px;font-weight:600;padding:4px 10px;border-radius:7px;display:inline-flex;align-items:center;gap:5px;flex-shrink:0}
+  .badge::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor}
+  .b-queued{background:rgba(168,133,79,.14);color:var(--warning)}
+  /* 转写中 → 黄色; 完成 → 保持绿色; 失败 → 红色 (用户要求4) */
+  .b-running{background:rgba(200,150,60,.16);color:var(--warning)}
+  .b-running::before{background:var(--warning)}
+  .b-done{background:rgba(92,138,107,.16);color:var(--success)}
+  .b-error{background:rgba(181,112,112,.16);color:var(--danger)}
+  .b-cancelled{background:var(--surface-3);color:var(--text-3)}
+  .b-running::before{animation:pulse 1.4s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+
+  .task-title{font-size:13.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pct{font-size:26px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:4px}
+  .pct small{font-size:13.5px;color:var(--text-3);font-weight:400;margin-left:2px}
+  .bar{height:6px;border-radius:4px;background:var(--surface-3);display:flex;gap:3px;overflow:hidden;margin-top:12px}
+  /* 双卡进度区: 固定占位(容纳两根进度条), 单卡时也在该高度内垂直居中, 下方元素不动 */
+  #gpuBars{margin-top:12px;height:50px;display:flex;flex-direction:column;justify-content:space-evenly}
+  .gpu-row{display:flex;align-items:center;gap:8px;min-height:0}
+  .gpu-row:first-child{margin-top:0}
+  .gpu-label{font-size:12.5px;color:var(--text-3);white-space:nowrap;min-width:24px;text-align:center}
+  .gpu-label{font-size:12.5px;color:var(--text-2);flex-shrink:0;width:30px}
+  .gpu-row .bar{flex:1;margin-top:0}
+  .gpu-time{font-size:12.5px;color:var(--text-3);flex-shrink:0;min-width:44px;text-align:right}
+  .seg{flex:1;background:var(--surface-3);border-radius:2px;position:relative;overflow:hidden}
+  .seg .fill{position:absolute;inset:0;border-radius:2px;background:var(--accent);transition:width .6s ease}
+  .stage{margin-top:8px;font-size:13.5px;color:var(--text-2);min-height:18px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+  .stage.err{color:var(--danger)}
+  .meta{display:flex;gap:8px;margin-top:10px}
+  .meta .stat{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px}
+  .meta .k{font-size:12.5px;color:var(--text-3);margin-bottom:4px;letter-spacing:.3px}
+  .meta .v{font-size:13.5px;font-weight:500;font-variant-numeric:tabular-nums;color:var(--text)}
+  .meta .v.mono{font-family:"SF Mono",ui-monospace,monospace;font-size:12.5px;color:var(--text-2)}
+  /* 当前任务卡底部操作行: 顶天立地, 取消+增加任务 双按钮等宽 */
+  .act{margin-top:auto;padding-top:12px;margin-bottom:-23px;display:flex;gap:10px}  /* 下移1/4按钮高(约10px): margin-bottom -13→-23, 卡片下巴更短 */
+  #cancel,#addJobQueue{background:transparent;border:1px solid var(--border-2);color:var(--text-2);padding:11px 0;border-radius:var(--radius-sm);font-size:13.5px;font-weight:500;cursor:pointer;transition:.2s;flex:1;text-align:center}
+  #cancel{color:var(--danger-2,#B57070);border-color:var(--border-2)}
+  #cancel:hover{border-color:var(--danger);color:var(--danger)}
+  #addJobQueue{color:var(--text);border-color:var(--border-2);background:var(--surface)}
+  #addJobQueue:hover{border-color:var(--accent);color:var(--accent)}
+  #cancel[style*="none"]{display:none!important}
+
+  .dl{font-size:12.5px;font-weight:600;padding:7px 13px;border-radius:8px;cursor:pointer;text-decoration:none;border:1px solid var(--border-2);color:var(--text);background:transparent;transition:.2s;display:inline-block}
+  .dl:hover{border-color:var(--accent);color:var(--text)}
+  .dl+.dl{margin-left:8px}
+  #out{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;max-height:460px;overflow-y:auto;font-size:15px;line-height:1.8;white-space:pre-wrap;word-break:break-word;-webkit-overflow-scrolling:touch}
+  #out .ts{color:var(--text-3);font-size:12.5px;margin-right:8px}
+  #out .play-ts{cursor:pointer;transition:color .15s,background .15s,box-shadow .15s;padding:2px 6px;border-radius:5px}
+  #out .play-ts:hover{color:var(--accent);background:var(--accent-soft)}
+  #out .play-ts.playing{color:#fff !important;font-weight:800;background:var(--danger);border:1px solid var(--danger);box-shadow:0 0 0 2px var(--danger),0 2px 8px rgba(0,0,0,.25);animation:playPulse 1.1s ease-in-out infinite}
+  #out .play-ts.playing:hover{background:var(--danger)}
+  @keyframes playPulse{0%,100%{opacity:1}50%{opacity:.75}}
+  #out .spk{font-weight:600;margin-right:6px}
+  #out .seg-text{outline:none;min-width:20px}
+  #out .seg-text:focus{background:var(--accent-soft);border-radius:4px}
+  #out.editing{border-color:var(--accent)}
+
+  .records{display:flex;flex-direction:column;gap:2px}
+  .job{display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid var(--border);cursor:pointer;transition:.15s}
+  .job:last-child{border-bottom:none}
+  .job:hover{background:var(--surface)}
+  .job .fn{flex:1;min-width:0}
+  .job .fn b{font-size:13.5px;font-weight:500;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .job .fn span{font-size:12.5px;color:var(--text-3)}
+  .job .mini{margin-top:8px}
+  .job .mini .bar{height:5px;margin-top:0;position:relative}
+  .job .mini .jfill{display:block;height:100%;border-radius:2px;transition:width .55s ease;background:var(--warning)}
+  .job .mini .t{font-size:12.5px;color:var(--text-3);margin-top:4px}
+  .job .del{flex-shrink:0;width:30px;height:30px;color:var(--text-2)}
+  .job .del:hover{border-color:var(--danger);color:var(--danger)}
+  .empty{color:var(--text-3);font-size:13.5px;padding:8px 0}
+
+  .footer-note{text-align:center;font-size:12.5px;color:var(--text-3);padding:22px 0 0;line-height:1.7}
+
+  /* ===== 响应式：宽屏双列 ===== */
+  @media(min-width:600px){
+    .phone{max-width:560px}
+  }
+  @media(min-width:900px){
+    .phone{max-width:1000px}
+    .app{padding:30px 30px 38px}
+    .grid{
+      display:grid;
+      grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+      gap:22px;
+      align-items:start;
+    }
+    .col-full{grid-column:1 / -1}
+    .grid > .block{margin-top:0}
+    .col-side{position:sticky;top:18px}
+  }
+
+  /* ---- 排版系统：Hero 52px / 页标题 22px / 区块标题 18px / 正文 15px / 次要 13.5px / 微标签 12.5px（下限） ---- */
+  body{
+    font-size:15px;line-height:1.7;letter-spacing:-.005em;
+    -webkit-font-smoothing:antialiased;
+    padding:0 0 72px;
+  }
+  .brand h1{font-size:22px;font-weight:600;letter-spacing:-.024em;line-height:1.25}
+  .brand .sub{font-size:13.5px;font-weight:400;letter-spacing:.004em;margin-top:7px;color:var(--text-2)}
+  .section-title{
+    font-size:18px;font-weight:600;letter-spacing:-.014em;color:var(--text);
+    margin-bottom:16px;
+  }
+  .upload-note{font-size:13.5px;line-height:1.65;letter-spacing:.004em;color:var(--text-2)}
+  .tag{
+    font-size:12.5px;font-weight:500;letter-spacing:.02em;
+    padding:6px 13px;border-radius:999px;
+    background:var(--surface-2);border-color:var(--border);color:var(--text-2);
+  }
+  .footer-note{font-size:12.5px;letter-spacing:.015em;color:var(--text-3);padding-top:32px}
+  .empty{font-size:13.5px;letter-spacing:.01em;color:var(--text-3);padding:16px 0}
+
+  /* 任务卡：Hero 数字是唯一的视觉中心 */
+  .task-title{font-size:15px;font-weight:500;letter-spacing:-.012em;margin-bottom:3px}
+  .pct{
+    font-size:52px;font-weight:500;letter-spacing:-.035em;line-height:1;
+    margin-top:16px;font-variant-numeric:tabular-nums;
+  }
+  .pct small{font-size:19.76px;font-weight:400;letter-spacing:0;color:var(--text-3);margin-left:6px}
+  .stage{font-size:13.5px;line-height:1.6;letter-spacing:.004em;margin-top:13px;min-height:24px;
+    display:block;padding:9px 13px;border:1px solid var(--border);border-radius:var(--radius-sm);
+    background:var(--surface-2);overflow-x:auto;white-space:nowrap;text-overflow:clip;max-width:100%;box-sizing:border-box}
+  .gpu-label{font-size:12.5px;font-weight:500;letter-spacing:.03em;width:46px}
+  .gpu-time{font-size:13.5px;min-width:56px;font-variant-numeric:tabular-nums}
+  .stage,.gpu-time,.pct,.meta .v{font-variant-numeric:tabular-nums}
+
+  /* 元信息块 */
+  .meta{gap:11px;margin-top:20px}
+  .meta .stat{padding:15px 17px;border-radius:var(--radius-md);background:var(--surface-2)}
+  .meta .k{font-size:12.5px;font-weight:500;letter-spacing:.05em;margin-bottom:6px}
+  .meta .v{font-size:16px;font-weight:600;letter-spacing:-.012em}
+  .meta .v.mono{font-size:15px;font-weight:500}
+
+  /* 按钮 */
+  button.b{
+    font-size:14px;font-weight:500;letter-spacing:.008em;
+    padding:13px 0;border-radius:var(--radius-sm);
+  }
+  #cancel,#addJobQueue{font-size:14px;font-weight:500;padding:13px 0;border-radius:var(--radius-sm)}
+  .dl{font-size:13.5px;font-weight:500;letter-spacing:.014em;padding:10px 17px;border-radius:var(--radius-sm)}
+
+  /* 上传区 */
+  .picker-hint{font-size:13.5px;letter-spacing:.008em;color:var(--text-2);line-height:1.6}
+  .pending-head{font-size:12.5px;font-weight:600;letter-spacing:.045em;margin-bottom:10px}
+  .pending-item{font-size:15px;padding:11px 13px;border-radius:var(--radius-sm)}
+  .pending-item .mt{font-size:12.5px;letter-spacing:.02em}
+  .pending-item .q{font-size:12.5px;letter-spacing:.02em}
+  .pending-list{max-height:158px;height:auto;gap:8px}
+
+  /* 队列 */
+  .job{padding:17px 6px;gap:14px}
+  .job .fn b{font-size:14px;font-weight:500;letter-spacing:-.012em}
+  .job .fn span{font-size:13.5px;letter-spacing:.006em}
+  .job .mini .t{font-size:12.5px;letter-spacing:.02em;margin-top:7px}
+  .job .del{width:36px;height:36px}
+
+  /* 结果区 */
+  #out{
+    font-size:15px;line-height:1.8;letter-spacing:0;
+    padding:24px 26px;border-radius:var(--radius-md);max-height:560px;
+  }
+  #out .ts{font-size:13.5px;letter-spacing:.02em;margin-right:11px;font-variant-numeric:tabular-nums}
+  #out .spk{font-size:14px;font-weight:600;letter-spacing:.006em;margin-right:9px}
+
+  /* 设置面板 */
+  .popover{width:276px;padding:20px;border-radius:var(--radius-md)}
+  .pop-title{font-size:16px;font-weight:600;letter-spacing:.02em;margin-bottom:15px}
+  .pop-row{margin-bottom:15px}
+  .pop-row>span{font-size:15px;letter-spacing:0}
+  .seg-btn{font-size:12.5px;letter-spacing:.01em;padding:7px 13px;border-radius:var(--radius-sm)}
+
+  /* ---- 方案 A · Editorial：全幅栅格 / 大留白 / 单层表面 ---- */
+  body{background:var(--bg);padding:32px 20px 72px}
+  .phone{
+    max-width:1180px;border-radius:var(--radius-xl);
+    border:1px solid var(--border);
+    box-shadow:0 1px 2px rgba(21,21,24,.03),0 12px 32px rgba(21,21,24,.04);
+  }
+  .app{padding:34px 32px 40px}
+  .topbar{margin-bottom:2px}
+  .top-actions{gap:10px}
+  .icon-btn{
+    width:38px;height:38px;border-radius:11px;
+    background:transparent;border-color:transparent;color:var(--text-2);
+    transition:background .16s ease,color .16s ease;
+  }
+  .icon-btn:hover{background:var(--surface-3);color:var(--text)}
+  .icon-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .tags{gap:8px;margin:16px 0 10px}
+  .upload-note{margin:0 0 26px}
+  .block{margin-top:34px}
+  .grid{gap:24px}
+
+  /* 卡片：白表面 + 1px 边框，不再灰底套白块 */
+  .fixed-card{
+    background:var(--surface);border:1px solid var(--border);
+    border-radius:var(--radius-lg);padding:26px;
+    height:auto;min-height:0;box-shadow:none;
+  }
+  .card-scroll{padding-right:2px}
+
+  /* 拖拽区 */
+  .drop.picker{
+    border:1.5px dashed var(--border-2);border-radius:var(--radius-md);
+    background:var(--surface-2);padding:14px;min-height:132px;
+    transition:border-color .18s ease,background .18s ease;
+  }
+  .drop.picker:hover,.drop.picker.drag{border-color:var(--accent);background:var(--accent-soft)}
+  .picker-icon{width:52px;height:52px;border-radius:13px}
+  .picker-icon svg{opacity:.42}
+  .drop.picker:hover .picker-icon svg{opacity:.85}
+
+  #pendingBox{
+    margin-top:16px;border:1px solid var(--border);border-radius:var(--radius-md);
+    background:var(--surface-2);padding:12px 14px;
+  }
+  .pending-item{background:var(--surface);border-color:var(--border)}
+
+  /* 按钮：近黑实心，大厂主行动点 */
+  button.b{padding:13px 0}
+  #go{background:var(--primary);color:var(--primary-fg);font-weight:500}
+  #go:hover{opacity:.86}
+  #go:disabled{background:var(--surface-3);color:var(--text-3);opacity:1}
+  #clear{background:var(--surface);border-color:var(--border-2);color:var(--text-2)}
+  #clear:hover{border-color:var(--danger);color:var(--danger)}
+  .btn-row{margin-top:18px;padding-top:0;gap:12px}
+
+  /* 徽章：去色块，描边胶囊 */
+  .badge{
+    font-size:12.5px;font-weight:500;letter-spacing:.01em;
+    padding:5px 12px;border-radius:999px;
+    background:transparent;border:1px solid currentColor;
+  }
+  .badge::before{width:6px;height:6px}
+
+  /* 进度：6px 轨道，数字已是 52px Hero */
+  .bar{height:6px;border-radius:999px;background:var(--surface-3);margin-top:16px;gap:4px}
+  .seg{border-radius:999px}
+  .seg .fill{border-radius:999px;background:var(--accent)}
+  #gpuBars{margin-top:16px;height:60px}
+  .gpu-row{gap:12px}
+
+  .act{margin-top:22px;padding-top:0;margin-bottom:0;gap:12px;padding-bottom:0}
+  #cancel,#addJobQueue{padding:13px 0}
+  #cancel{background:var(--surface);color:var(--danger);border-color:var(--border-2)}
+
+  /* 队列 */
+  .job{border-bottom:1px solid var(--border)}
+  .job:hover{background:var(--surface-2)}
+  .job .mini .bar{height:5px;border-radius:999px}
+  .job .mini .jfill{border-radius:999px}
+  .job .del{color:var(--text-3)}
+  .job .del:hover{border-color:var(--danger);color:var(--danger)}
+
+  /* 结果 */
+  #out{background:var(--surface-2);border:1px solid var(--border)}
+  #out .play-ts{padding:3px 8px;border-radius:6px}
+  #out .play-ts:hover{background:var(--accent-soft);color:var(--accent)}
+  #out .play-ts.playing{
+    color:var(--text);background:var(--accent-soft);
+    border:1px solid var(--border-2);font-weight:600;box-shadow:none;
+  }
+  #out.editing{border-color:var(--accent)}
+  .dl{background:var(--surface);border-color:var(--border-2);color:var(--text)}
+  .dl:hover{border-color:var(--accent);color:var(--accent)}
+  .dl+.dl{margin-left:10px}
+
+  .scrollfix::-webkit-scrollbar,.fixed-card ::-webkit-scrollbar,#out::-webkit-scrollbar{width:8px}
+  ::-webkit-scrollbar{width:8px}
+  ::-webkit-scrollbar-thumb{background:var(--border-2);border-radius:999px}
+  ::-webkit-scrollbar-track{background:transparent}
+
+  /* 桌面：铺开 */
+  @media(min-width:900px){
+    .phone{max-width:1180px}
+    .app{padding:40px 44px 48px}
+    .grid{gap:26px;align-items:stretch}
+    .fixed-card{min-height:404px;max-height:560px}
+    .block{margin-top:38px}
+  }
+  @media(max-width:899px){
+    .app{padding:26px 20px 32px}
+    .block{margin-top:26px}
+  }
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+  /* 强调色选择器（内置可调选项） */
+  .accent-swatches{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:160px}
+  .sw{width:18px;height:18px;border-radius:50%;border:2px solid var(--border-2);padding:0;cursor:pointer;background:var(--sw);transition:transform .15s,border-color .15s;flex-shrink:0}
+  .sw:hover{transform:scale(1.12)}
+  .sw.sel{border-color:var(--text);box-shadow:0 0 0 2px var(--surface)}
+  .sw:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .accent-reset{font-size:12px;color:var(--text-3);background:none;border:none;cursor:pointer;padding:2px 4px;text-decoration:underline;text-underline-offset:2px;margin-left:auto}
+  .accent-reset:hover{color:var(--text)}
+  </style>
+</head>
+<body>
+<div class="phone">
+  <div class="app">
+    <div class="topbar">
+      <div class="brand">
+        <h1>NofoMoss本地录音转写工具</h1>
+        
+      </div>
+      <div class="top-actions">
+        <div class="icon-btn" id="themeBtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="4"/>
+            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
+          </svg>
+        </div>
+        <div class="icon-btn" id="gearBtn" title="设置">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+        </div>
+        <div class="popover" id="settingsPop">
+          <div class="pop-title">设置</div>
+          <div class="pop-row">
+            <span>轮询间隔</span>
+            <div class="seg-group" id="pollGroup">
+              <button class="seg-btn" data-v="2000" type="button">2s</button>
+              <button class="seg-btn" data-v="3000" type="button">3s</button>
+              <button class="seg-btn" data-v="5000" type="button">5s</button>
+            </div>
+          </div>
+          <div class="pop-row">
+            <span>说话人彩色</span>
+            <div class="toggle on" id="colorToggle" role="switch" tabindex="0"><i></i></div>
+          </div>
+          <div class="pop-row">
+            <span title="跨段全局声纹聚类, 统一同人角色 G01/G02">全局声纹聚类</span>
+            <div class="toggle on" id="voiceToggle" role="switch" tabindex="0"><i></i></div>
+          </div>
+          <div class="pop-row">
+            <span>强调色</span>
+            <div class="accent-swatches" id="accentSwatches"></div>
+          </div>
+          <div class="pop-row">
+            <span></span>
+            <button class="accent-reset" id="accentReset" type="button">恢复默认强调色</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="tags">
+      <span class="tag">角色分离</span>
+      <span class="tag">方言支持</span>
+      <span class="tag">全程本地处理</span><span class="tag">多文件顺序转写</span>
+    </div>
+    <div class="upload-note">wav · mp3 · m4a · flac ，多个文件按顺序依次转写<br>文件全程本地处理 · 不上传第三方</div>
+
+    <div class="grid" id="mainGrid">
+      <!-- 左列：上传 / 当前任务 -->
+      <div class="col-main block" id="colMain">
+        <div class="section-title" id="uploadTitle">上传录音</div>
+        <div class="section-title" id="activeTitle" style="display:none">当前任务</div>
+        <div class="fixed-card">
+          <div class="card-scroll">
+            <div id="uploadBlock">
+              <!-- 选择文件框: 加号按钮(点击选文件) + 说明文本, 居中, 加高 -->
+              <div id="drop" class="drop picker">
+                <div class="picker-btn" id="pickBtn" role="button" tabindex="0" aria-label="选择录音文件">
+                  <span class="picker-icon">
+                    <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+                      <path d="M12 5v14M5 12h14"/>
+                    </svg>
+                  </span>
+                  <span class="picker-hint">拖入录音文件，或点击选择</span>
+                </div>
+              </div>
+              <input type="file" id="file" accept="audio/*,.wav,.mp3,.m4a,.flac,.aac,.ogg" multiple hidden>
+              <!-- 待转写文件: 虚线框, 固定位置, 只留左上角标题, 无说明文本 -->
+              <div id="pendingBox">
+                <div class="pending-head">待转写文件</div>
+                <div id="pendingList" class="pending-list"></div>
+              </div>
+              <div class="btn-row">
+                <button id="go" class="b" disabled>开始转写</button>
+                <button id="clear" class="b">清除</button>
+              </div>
+            </div>
+
+            <div id="activeBlock" style="display:none">
+              <div class="card-top"><span class="badge b-running" id="activeBadge">运行中</span></div>
+              <div class="task-title" id="activeName"></div>
+              <div class="pct"><span id="pct">0</span><small>%</small></div>
+              <!-- 双卡进度：每卡一个进度条 + 标签（单任务时显示所跑的那张卡） -->
+              <div id="gpuBars" style="margin-top:12px">
+                <div class="gpu-row" data-gpu="0" style="display:none">
+                  <div class="gpu-label">卡 0</div>
+                  <div class="bar"><div class="seg"><div class="fill"></div></div></div>
+                  <div class="gpu-time mono" id="gpu-t0">0:00</div>
+                </div>
+                <div class="gpu-row" data-gpu="1" style="display:none">
+                  <div class="gpu-label">卡 1</div>
+                  <div class="bar"><div class="seg"><div class="fill"></div></div></div>
+                  <div class="gpu-time mono" id="gpu-t1">0:00</div>
+                </div>
+                <div class="gpu-row voice-row" id="voiceRow" style="display:none">
+                  <div class="gpu-label"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3"/></svg>声纹</div>
+                  <div class="bar"><div class="seg"><div class="fill" style="width:90%"></div></div></div>
+                  <div class="gpu-time mono">统一人声中…</div>
+                </div>
+              </div>
+              <div class="stage" id="stage">排队中…</div>
+              <div class="meta">
+                <div class="stat"><div class="k">已用时间</div><div class="v mono" id="elapsed">0:00</div></div>
+                <div class="stat"><div class="k">预计剩余</div><div class="v mono" id="eta">—</div></div>
+              </div>
+              <div class="act">
+                <button id="cancel">取消任务</button>
+                <button id="addJobQueue" type="button">添加任务</button>
+              </div>
+              <input type="file" id="fileAdd" accept="audio/*,.wav,.mp3,.m4a,.flac,.aac,.ogg" multiple hidden>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 右列：任务队列 -->
+      <div class="col-side block" id="colSide">
+        <div class="section-title">任务队列</div>
+        <div class="fixed-card">
+          <div class="card-scroll" id="jobs"><div class="empty">暂无任务</div></div>
+        </div>
+      </div>
+
+      <!-- 底部横跨：转写结果 -->
+      <div class="col-full block" id="resultBlock" style="display:none">
+        <div class="section-title" id="resultTitle">转写结果</div>
+        <div class="card">
+          <div class="card-top">
+            <button class="icon-btn sm" id="playBtn" title="从头播放 / 暂停继续" type="button">
+              <svg id="playIcon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+              <svg id="pauseIcon" style="display:none" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="4" x2="6" y2="20"/><line x1="18" y1="4" x2="18" y2="20"/></svg>
+            </button>
+            <button class="icon-btn sm" id="copyBtn" title="复制全文" type="button">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+              </svg>
+            </button>
+            <button class="icon-btn sm" id="editBtn" title="编辑转写结果" type="button">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
+              </svg>
+            </button>
+            <a class="dl" id="dl-txt" download="transcript.txt">导出 TXT</a>
+            <a class="dl" id="dl-srt" download="transcript.srt">导出 SRT</a>
+          </div>
+          <div id="out"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-note">任务自动保存于本地 · 刷新页面或重开应用均不丢失</div>
+  </div>
+</div>
+
+<script>
+/* ===== 主题切换（浅色 / 深色），默认浅色，记忆上次选择 ===== */
+const themeBtn=document.getElementById('themeBtn');
+const SUN='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>';
+const MOON='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+function setTheme(t){document.documentElement.setAttribute('data-theme',t);themeBtn.innerHTML=t==='dark'?MOON:SUN;try{localStorage.setItem('moss-theme',t)}catch(e){}}
+themeBtn.addEventListener('click',()=>{const cur=document.documentElement.getAttribute('data-theme');setTheme(cur==='dark'?'light':'dark')});
+let saved;try{saved=localStorage.getItem('moss-theme')}catch(e){}
+setTheme(saved||'light');
+
+/* ===== 设置（纯前端，不改动后端接口）===== */
+let pollMs=2500, colorOn=true, voiceOn=true;
+try{pollMs=parseInt(localStorage.getItem('moss-poll'))||2500}catch(e){}
+try{colorOn=localStorage.getItem('moss-color')!=='off'}catch(e){}
+try{voiceOn=localStorage.getItem('moss-voice')!=='off'}catch(e){}
+const TRASH='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>';
+const EDIT_ICON='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>';
+const CHECK_ICON='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+let editing=false;
+
+const gearBtn=document.getElementById('gearBtn');
+const settingsPop=document.getElementById('settingsPop');
+gearBtn.addEventListener('click',e=>{e.stopPropagation();settingsPop.classList.toggle('open')});
+document.addEventListener('click',e=>{
+  if(settingsPop.classList.contains('open') && !settingsPop.contains(e.target) && e.target!==gearBtn && !gearBtn.contains(e.target))
+    settingsPop.classList.remove('open');
+});
+
+const pollGroup=document.getElementById('pollGroup');
+function syncPoll(){
+  pollGroup.querySelectorAll('.seg-btn').forEach(b=>b.classList.toggle('on',parseInt(b.dataset.v)===pollMs));
+}
+syncPoll();
+pollGroup.addEventListener('click',e=>{
+  const b=e.target.closest('.seg-btn');if(!b)return;
+  pollMs=parseInt(b.dataset.v);
+  try{localStorage.setItem('moss-poll',pollMs)}catch(_){}
+  syncPoll();
+  clearInterval(refreshTimer);refreshTimer=setInterval(refresh,pollMs);
+});
+
+const colorToggle=document.getElementById('colorToggle');
+function syncColor(){colorToggle.classList.toggle('on',colorOn)}
+syncColor();
+function toggleColor(){colorOn=!colorOn;try{localStorage.setItem('moss-color',colorOn?'on':'off')}catch(_){}syncColor()}
+colorToggle.addEventListener('click',e=>{e.stopPropagation();toggleColor()});
+colorToggle.addEventListener('keydown',e=>{if(e.key===' '||e.key==='Enter'){e.preventDefault();toggleColor()}});
+
+const voiceToggle=document.getElementById('voiceToggle');
+function syncVoice(){voiceToggle.classList.toggle('on',voiceOn)}
+syncVoice();
+function toggleVoice(){voiceOn=!voiceOn;try{localStorage.setItem('moss-voice',voiceOn?'on':'off')}catch(_){}syncVoice()}
+voiceToggle.addEventListener('click',e=>{e.stopPropagation();toggleVoice()});
+voiceToggle.addEventListener('keydown',e=>{if(e.key===' '||e.key==='Enter'){e.preventDefault();toggleVoice()}});
+
+/* ===== 强调色（内置可调选项，记忆上次选择）===== */
+function hexA(h,a){const n=parseInt(h.slice(1),16);return 'rgba('+((n>>16)&255)+','+((n>>8)&255)+','+(n&255)+','+a+')'}
+const ACCENTS=[
+  {name:'石墨',l:'#3D4552',d:'#A8AFC0'},
+  {name:'雾蓝',l:'#3F6FA8',d:'#9DB8DC'},
+  {name:'黛青',l:'#2F6E63',d:'#8FBFB2'},
+  {name:'靛紫',l:'#4A4170',d:'#ADA3D4'},
+  {name:'赭石',l:'#7A5340',d:'#C2A088'},
+  {name:'橄榄',l:'#5C5A33',d:'#B7B27E'},
+  {name:'胭脂',l:'#7A3F55',d:'#C79AB0'}
+];
+const swWrap=document.getElementById('accentSwatches');
+const accentStyle=document.createElement('style');accentStyle.id='accent-override';document.body.appendChild(accentStyle);
+function applyAccent(a){
+  accentStyle.textContent=
+    ':root{--accent:'+a.l+'!important;--accent-soft:'+hexA(a.l,.10)+'!important}'+
+    '[data-theme="dark"]{--accent:'+a.d+'!important;--accent-soft:'+hexA(a.d,.16)+'!important}';
+}
+let accentIdx=-1;
+function syncAccent(){swWrap.querySelectorAll('.sw').forEach((b,i)=>b.classList.toggle('sel',i===accentIdx))}
+ACCENTS.forEach((a,i)=>{
+  const b=document.createElement('button');
+  b.type='button';b.className='sw';b.style.setProperty('--sw',a.l);
+  b.title=a.name;b.setAttribute('aria-label','强调色：'+a.name);
+  b.addEventListener('click',e=>{e.stopPropagation();accentIdx=i;applyAccent(a);try{localStorage.setItem('moss-accent',String(i))}catch(_){}syncAccent()});
+  swWrap.appendChild(b);
+});
+const accentResetBtn=document.getElementById('accentReset');
+accentResetBtn.addEventListener('click',e=>{e.stopPropagation();accentIdx=-1;accentStyle.textContent='';try{localStorage.removeItem('moss-accent')}catch(_){}syncAccent()});
+let savedA;try{savedA=localStorage.getItem('moss-accent')}catch(_){}
+if(savedA!==null&&savedA!==undefined&&ACCENTS[parseInt(savedA)]){accentIdx=parseInt(savedA);applyAccent(ACCENTS[accentIdx])}
+syncAccent();
+
+// 提交任务时把全局声纹开关传给后端
+function fdGlobalVoice(fd){fd.append('global_voice',voiceOn?'1':'0');return fd}
+
+/* ===== 以下为原对接逻辑，接口调用保持不变 ===== */
+const $=id=>document.getElementById(id);
+const drop=$('drop'), fileInput=$('file');
+const goBtn=$('go'), clearBtn=$('clear');
+const outEl=$('out'), jobsEl=$('jobs');
+let pendingFiles=[], lastSegs=[], lastText='';   // pendingFiles: 待上传文件队列(按添加顺序)
+
+function getDuration(f){  // 用本地 audio 元素读文件真实时长(秒), 或 null
+  return new Promise(res=>{
+    try{
+      const url=URL.createObjectURL(f);
+      const a=document.createElement('audio');
+      a.preload='metadata';a.src=url;
+      a.addEventListener('loadedmetadata',()=>{URL.revokeObjectURL(url);res(isFinite(a.duration)&&a.duration>0?a.duration:null)});
+      a.addEventListener('error',()=>{URL.revokeObjectURL(url);res(null)});
+    }catch(e){res(null)}
+  });
+}
+
+function addFiles(fileList){
+  const arr=Array.from(fileList||[]);
+  if(!arr.length)return;
+  let changed=false;
+  arr.forEach(f=>{
+    // 去重(同名同大小视为重复)
+    const dup=pendingFiles.some(p=>p.name===f.name&&p.size===f.size);
+    if(!dup){ pendingFiles.push(f); changed=true; }
+  });
+  if(changed){ renderPending(); }
+}
+function removePending(i){
+  pendingFiles.splice(i,1);renderPending();
+}
+function renderPending(){
+  const list=document.getElementById('pendingList');
+  if(!list)return;
+  document.getElementById('pendingBox').style.display='block';  // 常驻显示
+  if(!pendingFiles.length){
+    list.innerHTML=''  // 空态: 只留“待转写文件”标题, 无说明文本
+    updateGo();return
+  }
+  list.innerHTML=pendingFiles.map((f,i)=>
+    '<div class="pending-item"><span class="q">'+(i+1)+'</span>'+
+    '<span class="nm">'+esc(f.name)+'</span>'+
+    '<span class="mt">'+(f.size/1048576).toFixed(1)+'MB</span>'+
+    '<span class="rm" data-i="'+i+'" title="移除">×</span></div>'
+  ).join('');
+  list.querySelectorAll('.rm').forEach(el=>el.addEventListener('click',e=>{e.stopPropagation();removePending(parseInt(el.dataset.i))}));
+  // 异步读每个文件的时长, 补到列表
+  pendingFiles.forEach(async(f,i)=>{
+    const d=await getDuration(f);
+    if(d && pendingFiles[i]===f){ const mt=list.querySelectorAll('.mt')[i]; if(mt)mt.textContent=fmtDur(d); }
+  });
+  updateGo();
+}
+function updateGo(){ goBtn.disabled=!pendingFiles.length; }
+
+drop.addEventListener('click',()=>fileInput.click());
+$('pickBtn').addEventListener('click',e=>{e.stopPropagation();fileInput.click()});
+['dragover','dragenter'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('drag')}));
+['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('drag')}));
+drop.addEventListener('drop',e=>{e.preventDefault();if(e.dataTransfer.files.length)addFiles(e.dataTransfer.files)});
+fileInput.addEventListener('change',e=>{addFiles(e.target.files);fileInput.value=''});
+
+// ===== 当前任务卡「增加任务」: 选文件直接进队列, 不切当前任务, 显示在下方任务队列卡 =====
+const addJobQueueBtn=$('addJobQueue'), fileAddInput=$('fileAdd');
+addJobQueueBtn.addEventListener('click',()=>fileAddInput.click());
+fileAddInput.addEventListener('change',async()=>{
+  const files=Array.from(fileAddInput.files||[]);
+  fileAddInput.value='';
+  if(!files.length)return;
+  for(const f of files){
+    const fd=new FormData();fd.append('file',f);fdGlobalVoice(fd);
+    try{
+      const r=await fetch('/api/jobs',{method:'POST',body:fd});
+      const d=await r.json();
+      if(!r.ok)throw new Error(d.error||('HTTP '+r.status));
+    }catch(err){ alert('❌ 增加任务 "'+f.name+'" 失败: '+err.message); }
+  }
+  refresh();  // 刷新, 让下方任务队列卡展示新增的排队任务
+});
+
+clearBtn.addEventListener('click',()=>{
+  pendingFiles=[];renderPending();$('resultBlock').style.display='none';
+});
+
+goBtn.addEventListener('click',async()=>{
+  if(!pendingFiles.length)return;
+  goBtn.disabled=true;
+  const total=pendingFiles.length;
+  let okCount=0;
+  // 按添加顺序逐个提交; 后端队列已按序处理
+  for(let k=0;k<pendingFiles.length;k++){
+    const f=pendingFiles[k];
+    const fd=new FormData();fd.append('file',f);fdGlobalVoice(fd);
+    try{
+      const r=await fetch('/api/jobs',{method:'POST',body:fd});
+      const d=await r.json();
+      if(!r.ok)throw new Error(d.error||('HTTP '+r.status));
+      if(k===0)localStorage.setItem('mossLastJob',d.id);  // 首个设为当前
+      pendingFiles.splice(k,1);k--;renderPending();
+      okCount++;
+    }catch(err){
+      alert('❌ 提交 "'+f.name+'" 失败: '+err.message);
+      goBtn.disabled=!pendingFiles.length;
+      return;
+    }
+  }
+  await refresh(true);
+  goBtn.disabled=!pendingFiles.length;
+});
+
+function fmtClock(sec){
+  if(!isFinite(sec)||sec<0)return '—';
+  sec=Math.floor(sec);
+  const h=Math.floor(sec/3600),m=Math.floor(sec%3600/60),s=sec%60;
+  return h?h+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')
+          :m+':'+String(s).padStart(2,'0');
+}
+function fmtTs(t){const s=Math.round(t);return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')}
+function srtTs(t){const h=Math.floor(t/3600),m=Math.floor((t%3600)/60),s=Math.floor(t%60);
+  const ms=Math.round((t-Math.floor(t))*1000);
+  return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')+','+String(ms).padStart(3,'0')}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+const STATUS={queued:['排队中','b-queued'],running:['转写中','b-running'],done:['完成','b-done'],
+              error:['失败','b-error'],cancelled:['已取消','b-cancelled']};
+
+function fmtClockShort(sec){
+  if(!isFinite(sec)||sec<0)return '—';
+  sec=Math.floor(sec);
+  const m=Math.floor(sec/60), s=sec%60;
+  return m+':'+String(s).padStart(2,'0');
+}
+/* 双卡进度条: job.gpu(该任务卡号/字典) + job.gpuElapsed(卡->累积已用秒) */
+function renderGpuProgress(job,p){
+  const wrap=$('gpuBars');
+  if(!wrap)return;
+  const vr=$('voiceRow'); if(vr)vr.style.display='none';  // 声纹行仅在声纹阶段显示
+  const ge=job.gpuElapsed||{};
+  const sp=job.segProgress||{};
+  // 判定是否多段并行: 有 segmentCount>1, 或 gpuElapsed 有多个卡, 或 segProgress 有多个段
+  const isParallel = (job.segmentCount && job.segmentCount>1) ||
+                     (typeof ge==='object' && !Array.isArray(ge) && Object.keys(ge).length>1) ||
+                     (typeof sp==='object' && Object.keys(sp).length>1);
+  // 收集要显示的卡: 并行则显示 0/1 两张; 否则只显示任务实际用的那张卡
+  let gpuKeys=[];
+  if(isParallel){ gpuKeys=['0','1']; }
+  else {
+    const used=typeof ge==='object'&&!Array.isArray(ge)?Object.keys(ge):[];
+    if(used.length) gpuKeys=used.slice(0,1);
+    else if(job.gpu!==undefined && job.gpu!==null) gpuKeys=[String(job.gpu)];
+    else gpuKeys=['0'];
+  }
+  wrap.querySelectorAll('.gpu-row').forEach(r=>r.style.display='none');
+  gpuKeys.slice(0,2).forEach((g,idx)=>{
+    let row=wrap.querySelector('.gpu-row[data-gpu="'+g+'"]');
+    if(!row)return;
+    row.style.display='flex';
+    // 进度来源优先级: 该卡对应段的真实进度(segProgress) → 该卡累计耗时/总时长 → 均分总进度
+    let gp=p;
+    const segProg = typeof sp[g]==='number' ? sp[g] : null;
+    if(isParallel){
+      if(segProg!==null){ gp=Math.max(0,Math.min(100,segProg)); }
+      else{
+        const t=typeof ge[g]==='number'?ge[g]:null;
+        if(t!==null && job.durationSec){ gp=(t/job.durationSec*100); }
+        else{ gp=Math.max(0,Math.min(100,(p-10)/40*100)); }
+      }
+    }
+    const fill=row.querySelector('.fill');
+    if(fill)fill.style.width=Math.max(3,Math.min(100,gp))+'%';
+    // 该卡时间: 完成后(gpuElapsed)显示耗时; 运行中显示该卡进度% (不显示无意义的 00:00)
+    const tm=row.querySelector('.gpu-time');
+    if(!tm)return;
+    const gpuDone = job.status==='done' || job.status==='error' || job.status==='cancelled';
+    if(ge[g]!==undefined && ge[g]!==null && ge[g]>=0 && gpuDone){
+      tm.textContent=fmtClockShort(ge[g]);
+    }else{
+      tm.textContent=Math.round(gp)+'%';
+    }
+  });
+}
+
+let _doneTimer=null, _doneShown=false, _doneHandledJobId=null, _userOpenedJobId=null;
+// autoReturn: 仅当用户正在观看转写、任务刚完成时= true (展示完成卡2s后自动回上传);
+// 手动打开已完成任务时= false (展示结果并保持)
+function renderActive(job, autoReturn){
+  // 编辑中: 保留结果编辑视图, 不切换/抢回
+  if(editing){ return; }
+  // 完成: 展示“任务完成”卡片(含结果), 若 autoReturn 则2秒后自动回到上传页
+  if(job&&job.status==='done'&&job.id!==_doneHandledJobId && !autoReturn){
+    // 手动打开已完成任务: 展示结果并保持 (不自动回跳)
+    $('uploadBlock').style.display='none';
+    $('activeBlock').style.display='block';
+    $('uploadTitle').style.display='none';
+    $('activeTitle').style.display='block';
+    $('activeBadge').textContent='● 任务完成';
+    $('activeBadge').className='badge b-done';
+    const _dur=job.durationSec&&job.durationSec>0?('  · '+fmtClock(job.durationSec)):'';
+    $('activeName').textContent=job.filename+_dur;
+    $('pct').textContent=100;
+    renderGpuProgress(job, 100);
+    $('stage').textContent='转写完成';
+    $('stage').className='stage';
+    $('elapsed').textContent=fmtClock(job.elapsedSec||0);
+    $('eta').textContent='完成';
+    $('cancel').style.display='none';
+    renderResult(job);
+    _doneHandledJobId=job.id;  // 标记: 手动打开过, 下次不再弹完成卡
+    return;
+  }
+  // 转写刚完成时的自动完成卡 (仅 autoReturn 触发, 2秒后回上传)
+  if(job&&job.status==='done'&&autoReturn&&job.id!==_doneHandledJobId){
+    $('uploadBlock').style.display='none';
+    $('activeBlock').style.display='block';
+    $('uploadTitle').style.display='none';
+    $('activeTitle').style.display='block';
+    $('activeBadge').textContent='● 任务完成';
+    $('activeBadge').className='badge b-done';
+    const _dur2=job.durationSec&&job.durationSec>0?('  · '+fmtClock(job.durationSec)):'';
+    $('activeName').textContent=job.filename+_dur2;
+    $('pct').textContent=100;
+    renderGpuProgress(job, 100);
+    $('stage').textContent='任务完成，正在显示结果…';
+    $('stage').className='stage';
+    $('elapsed').textContent=fmtClock(job.elapsedSec||0);
+    $('eta').textContent='完成';
+    $('cancel').style.display='none';
+    renderResult(job);
+    _doneHandledJobId=job.id;  // 标记: 已完成自动卡片
+    if(_doneTimer)clearTimeout(_doneTimer);
+    _doneTimer=setTimeout(()=>{ _userOpenedJobId=null; backToUpload(); }, 2000);
+    return;
+  }
+  // 已完成但已处理过: 手动打开保留结果; 自动回跳后回上传
+  if(job&&job.status==='done'&&job.id===_doneHandledJobId){ 
+    if(autoReturn){ backToUpload(); return; }  // 自动模式下已处理 → 回上传
+    // 手动打开已完成任务 → 保留结果; 但若并非用户正在打开(是自动完成卡残留) → 回上传
+    if(job.id!==_userOpenedJobId){ backToUpload(); return; }
+    return;
+  }
+  _doneShown=false;  // 其他状态清除
+  if(!job||job.status==='error'||job.status==='cancelled'){
+    backToUpload();
+    return;
+  }
+  $('uploadBlock').style.display='none';
+  $('activeBlock').style.display='block';
+  $('uploadTitle').style.display='none';
+  $('activeTitle').style.display='block';
+  const st=STATUS[job.status]||[job.status,'b-queued'];
+  $('activeBadge').textContent=st[0];
+  $('activeBadge').className='badge '+st[1];
+  const _dur3=job.durationSec&&job.durationSec>0?('  · '+fmtClock(job.durationSec)):'';
+  $('activeName').textContent=job.filename+_dur3;
+  const p=Math.round(job.progress||0);
+  $('pct').textContent=p;
+  // 声纹/合并阶段(phase=voice): 用“声纹校验中”代替 GPU 进度条
+  const isVoicePhase = job.phase==='voice' || (job.stage||'').indexOf('声纹')>=0 || (job.stage||'').indexOf('合并')>=0;
+  if(isVoicePhase && !editing){
+    renderVoicePhase(job);
+  }else{
+    renderGpuProgress(job, p);
+  }
+  $('stage').textContent=(job.status==='error'?'❌ ':'')+(job.stage||'');
+  $('stage').className='stage'+(job.status==='error'?' err':'');
+  // 已用时间: 服务器 elapsedSec 可能为0, 用墙钟兜底保证真实
+  const wallT=(Date.now()-new Date(job.createdAt).getTime())/1000;
+  const done=job.elapsedSec||0;
+  const used=done>0?done:wallT;
+  $('elapsed').textContent=fmtClock(used);
+  // 预计剩余: 基于转写进度估算 (elapsed/progress*(100-progress)), 不用音频时长(duration 与转写耗时不同量纲)
+  let eta='—';
+  const prog=job.progress||0;
+  if(prog>2 && prog<97 && used>0){ eta='预计 '+fmtClock(used*(100-prog)/prog); }
+  else if(prog>=97){ eta='即将完成'; }
+  $('eta').textContent=eta;
+  $('cancel').style.display=(job.status==='running'||job.status==='queued')?'inline-block':'none';
+}
+function renderVoicePhase(job){
+  const wrap=$('gpuBars'); if(!wrap)return;
+  // 声纹校验中: 隐藏 GPU 卡进度条, 显示“声纹校验”状态行
+  wrap.querySelectorAll('.gpu-row[data-gpu]').forEach(r=>r.style.display='none');
+  const vr=$('voiceRow'); if(vr)vr.style.display='flex';
+}
+function backToUpload(){
+  _userOpenedJobId=null; _followedRunningId=null; _doneHandledJobId=null;  // 清除跟随/标记, 让上传页保持
+  $('uploadBlock').style.display='block';
+  $('activeBlock').style.display='none';
+  $('uploadTitle').style.display='block';
+  $('activeTitle').style.display='none';
+}
+
+let currentJobId=null, audioCtl=null;
+function renderResult(job){
+  lastSegs=job.segments||[];lastText=job.text||'';
+  currentJobId=job.id||currentJobId;
+  $('resultBlock').style.display='block';
+  if(lastSegs.length){
+    const palette=(document.documentElement.getAttribute('data-theme')==='dark')?['#7FB3D5','#8FC9A5','#D4B483','#C79BC4','#A8B2C4']:['#2F6B8F','#3F7A55','#8A6420','#7A4F72','#4A5468'];
+    const order=[],color={};
+    outEl.innerHTML=lastSegs.map((s,i)=>{
+      if(!(s.speaker in color)){color[s.speaker]=palette[order.length%palette.length];order.push(s.speaker);}
+      const col=colorOn?color[s.speaker]:'';
+      const editable=editing?' contenteditable="true" class="seg-text" data-idx="'+i+'"':'';
+      return '<div><span class="ts play-ts" data-i="'+i+'" title="点击播放；再次点击当前句暂停/继续">['+fmtTs(s.start)+' → '+fmtTs(s.end)+']</span>'+
+        '<span class="spk"'+(col?' style="color:'+col+'"':'')+'>'+esc(s.speaker)+'</span>'+
+        '<span'+editable+'>'+esc(s.text)+'</span></div>';
+    }).join('');
+    // 点击时间戳 → 从该句开始连续播放 (恢复自动跟随)
+    outEl.querySelectorAll('.play-ts').forEach(el=>{
+      el.addEventListener('click',e=>{e.stopPropagation();autoFollow=true;togglePlayAt(parseInt(el.dataset.i))});
+    });
+  }else{
+    if(editing){
+      outEl.innerHTML='<div><span class="seg-text" data-idx="-1" contenteditable="true">'+esc(lastText)+'</span></div>';
+    }else{
+      outEl.textContent=lastText;
+    }
+  }
+  outEl.classList.toggle('editing',editing);
+  syncEditBtn();
+  // 换结果时重置播放按钮为播放图标
+  if(!audioCtl){ setPlayIcon(false); }
+  else { setPlayIcon(!audioCtl.audio.paused); }
+}
+
+/* ===== 点击时间段播放 + 自动接续 (用户要求4) ===== */
+// 全局单例 audio 控制器: 复用同一 Audio 实例, 避免每次 new Audio() 触发 autoplay 限制
+let _playTimer=null;
+// 点击时间点: 不同句子 → 从该句开始播; 点击当前正在播的句子 → 暂停; 再点一次 → 继续
+function togglePlayAt(idx){
+  // 点的不是“当前正在播放的这句”→ 从该句开始连续播放
+  if(!audioCtl || audioCtl.jid!==currentJobId || audioCtl.idx!==idx){
+    playFrom(idx);
+    return;
+  }
+  const a=audioCtl.audio;
+  if(a.paused){
+    // 已暂停 → 继续播放
+    a.play().then(()=>{}).catch(()=>{ playFrom(idx); });
+  }else{
+    // 正在播放 → 暂停 (保留高亮/位置, 便于自由翻看)
+    a.pause();
+  }
+}
+function playFrom(startIdx){
+  if(!currentJobId || !lastSegs.length){return}
+  autoFollow=true;  // 用户主动点击 → 恢复自动跟随
+  stopPlay(false);  // 停掉正在播的, 但不重置高亮/序号 (仅暂停+清空 src)
+  if(!audioCtl){
+    audioCtl={idx:startIdx,segs:lastSegs,jid:currentJobId,audio:new Audio()};
+    audioCtl.audio.preload='auto';  // 预加载, 确保 metadata 就绪
+    audioCtl.audio.addEventListener('ended',()=>{audioCtl.idx++;playFromIdx(audioCtl)});
+    audioCtl.audio.addEventListener('error',()=>{audioCtl.idx++;playFromIdx(audioCtl)});
+    // 播放中实时高亮: 根据播到的绝对时间, 高亮当前对应的子段 (随声音移动)
+    audioCtl.audio.addEventListener('timeupdate',()=>{onTimeUpdate(audioCtl)});
+    // 同步播放/暂停按钮图标
+    audioCtl.audio.addEventListener('play',()=>setPlayIcon(true));
+    audioCtl.audio.addEventListener('pause',()=>setPlayIcon(false));
+  }else{
+    audioCtl.idx=startIdx;audioCtl.segs=lastSegs;audioCtl.jid=currentJobId;
+  }
+  playFromIdx(audioCtl);
+}
+function onTimeUpdate(ctl){
+  if(!ctl || !ctl.audio || ctl.audio.paused&&!ctl.audio.playing) return;
+  const a=ctl.audio;
+  const cur=ctl.segs[ctl.idx];
+  if(!cur) return;
+  const segStart=(cur.segStart!==undefined?cur.segStart:0);
+  const absT=a.currentTime+segStart;  // 播到的绝对时间
+  // 在当前音频(seg)内找绝对时间落入的子段, 高亮它 (跨子段时移动高亮)
+  const segFiles=ctl.segs[ctl.idx]?(ctl.segs[ctl.idx].seg):null;
+  let best=-1;
+  for(let i=0;i<ctl.segs.length;i++){
+    const st=ctl.segs[i].segStart!==undefined?ctl.segs[i].segStart:0;
+    const s0=ctl.segs[i].start, e0=ctl.segs[i].end;
+    // 仅在同一 seg 文件内移动高亮
+    if((ctl.segs[i].seg??0)!==(ctl.segs[ctl.idx].seg??0)) continue;
+    if(absT>=s0-0.1 && absT<=e0+0.1){ best=i; break; }
+  }
+  if(best>=0 && best!==ctl.idx){ ctl.idx=best; }
+  highlightPlaying(ctl.idx);
+}
+function playFromIdx(ctl){
+  if(!ctl || ctl.idx>=ctl.segs.length){highlightPlaying(null);stopPlay(true);return}
+  const s=ctl.segs[ctl.idx];
+  const seg=(s.seg!==undefined?s.seg:0);
+  const segStart=(s.segStart!==undefined?s.segStart:0);
+  const src='/api/audio/'+ctl.jid+'/'+seg;
+  const t=Math.max(0,(s.start||0)-segStart);
+  // 仅用户“点击”时恢复跟随 (playFrom 里设 autoFollow=true); 自动接续下一段时不强制重新跟随
+  highlightPlaying(ctl.idx);
+  // 关键修复: 先确认/切换 src, 等 metadata 就绪后再 seek + play。
+  // 直接设 currentTime 在 metadata 未加载时无效, 导致从 0 开始播或不出声。
+  const a=ctl.audio;
+  if(a.dataset.src!==src){ a.dataset.src=src; a.src=src; }
+  const tryPlay=()=>{
+    try{ if(Math.abs(a.currentTime-t)>0.15) a.currentTime=t; }catch(e){}
+    a.play().then(()=>{}).catch(()=>{
+      // autoplay 被拒/资源未就绪 → 短暂后重试 (最多若干次)
+      if(_playTimer)clearTimeout(_playTimer);
+      _playTimer=setTimeout(()=>{if(audioCtl===ctl)playFromIdx(ctl)},180);
+    });
+  };
+  if(a.readyState>=1){ tryPlay(); }
+  else{
+    a.addEventListener('loadedmetadata',tryPlay,{once:true});
+    // 兜底: 若 2s 内 metadata 仍没来, 直接尝试 (覆盖缓存/已加载情形)
+    a.addEventListener('canplay',tryPlay,{once:true});
+  }
+}
+let autoFollow=true;  // 高亮是否自动跟随滚动 (用户手动滚动时暂停, 点击句子时恢复)
+// 用户手动滚动结果区 → 暂停自动跟随, 便于自由翻看
+if(outEl){
+  outEl.addEventListener('wheel',()=>{autoFollow=false},{passive:true});
+  outEl.addEventListener('touchmove',()=>{autoFollow=false},{passive:true});
+  // 方向键/翻页/Home/End 等键盘滚动也算手动
+  outEl.addEventListener('keydown',e=>{
+    if(['ArrowUp','ArrowDown','PageUp','PageDown','Home','End',' '].includes(e.key)){autoFollow=false;}
+  });
+}
+function highlightPlaying(idx){
+  const els=outEl.querySelectorAll('.play-ts');
+  els.forEach(el=>{
+    el.classList.remove('playing');
+    if(idx!==null && el.dataset.i!==undefined && parseInt(el.dataset.i)===idx){
+      el.classList.add('playing');
+      // 仅当自动跟随开启时滚动到当前句; 用户在翻看时不强制 (避免抢回滚动条)
+      if(autoFollow){ try{el.scrollIntoView({block:'nearest',behavior:'smooth'})}catch(e){} }
+    }
+  });
+}
+function stopPlay(resetHighlight){
+  if(audioCtl){
+    try{audioCtl.audio.pause();audioCtl.audio.currentTime=0}catch(e){}
+    if(resetHighlight)audioCtl=null;
+  }
+  if(_playTimer){clearTimeout(_playTimer);_playTimer=null}
+  if(resetHighlight){highlightPlaying(null);setPlayIcon(false);}
+}
+
+function renderJobs(list){
+  jobsEl.innerHTML='';
+  if(!list.length){jobsEl.innerHTML='<div class="empty">暂无任务</div>';return}
+  list.forEach(j=>{
+    const st=STATUS[j.status]||[j.status,'b-queued'];
+    const showBar=(j.status==='running'||j.status==='queued');
+    // 已用时间: elapsedSec 可能为0, 用墙钟兜底(创建至今)保证非 0:00
+    const wallT=(Date.now()-new Date(j.createdAt).getTime())/1000;
+    const used=(j.elapsedSec||0)>0?j.elapsedSec:wallT;
+    const miniTxt=showBar?(Math.round(j.progress)+'% · '+fmtClock(used)):'';
+    const div=document.createElement('div');
+    div.className='job';
+    // 音频时长显示在转写时间上方 (用户要求6)
+    const durTxt=j.durationSec&&j.durationSec>0?('时长 '+fmtClock(j.durationSec)+'  ·  '):'';
+    let inner='<div class="fn"><b>'+esc(j.filename)+'</b>'+
+      '<span>'+durTxt+new Date(j.createdAt).toLocaleString('zh-CN',{hour12:false})+'</span>';
+    if(showBar){
+      // 进度条填充色跟随状态: 转写中黄色 / 排队灰色
+      const fillCol=j.status==='running'?'var(--warning)':'var(--border-2)';
+      inner+='<div class="mini"><div class="bar"><div class="jfill" style="background:'+fillCol+';width:'+Math.min(100,j.progress||0)+'%"></div></div>'+
+        '<div class="t">'+miniTxt+'</div></div>';
+    }
+    inner+='</div>'+
+      '<span class="badge '+st[1]+'">'+st[0]+'</span>'+
+      '<button class="icon-btn del" type="button" title="删除任务及文件（音频/分段/结果）">'+TRASH+'</button>';
+    div.innerHTML=inner;
+    div.querySelector('.del').addEventListener('click',e=>{e.stopPropagation();delJob(j.id,j.filename)});
+    div.onclick=()=>openJob(j.id);
+    jobsEl.appendChild(div);
+  });
+}
+
+async function delJob(id,filename){
+  if(!confirm('确定删除任务「'+filename+'」?\n将同时删除原始音频、分段数据和转写结果,不可恢复。'))return;
+  try{
+    const r=await fetch('/api/jobs/'+id,{method:'DELETE'});
+    if(r.ok){
+      if(localStorage.getItem('mossLastJob')===id)localStorage.removeItem('mossLastJob');
+      refresh();
+    }else alert('删除失败');
+  }catch(e){alert('删除失败: '+e.message)}
+}
+
+function openJob(id){
+  if(editing&&!confirm('正在编辑中，切换任务将放弃未保存的修改，是否继续？'))return;
+  editing=false;
+  fetch('/api/jobs/'+id).then(r=>r.json()).then(job=>{
+    localStorage.setItem('mossLastJob',id);
+    _doneHandledJobId=null;  // 手动打开: 允许再次展示结果
+    if(job.status==='done'){
+      // 已完成任务: 只显示结果正文(resultBlock), 第一个卡片保持“上传录音”, 不切当前任务
+      _userOpenedJobId=null;  // 不强制当前任务卡展示; refresh 里已无未完成 → 回上传
+      _followedRunningId=null;
+      backToUpload();
+      renderResult(job);
+    } else {
+      // 未完成任务: 记录跟随, 第一个卡片显示任务状态
+      _userOpenedJobId=job.id;
+      _followedRunningId=job.id;
+      renderActive(job, false);
+    }
+  });
+}
+function showActive(job){
+  renderActive(job);
+}
+
+let _followedRunningId=null;  // 当前正在跟随显示的运行中任务 id (用于检测完成瞬间)
+async function refresh(){
+  try{
+    const r=await fetch('/api/jobs',{cache:'no-store'});
+    const d=await r.json();
+    renderJobs(d.jobs||[]);
+    const last=localStorage.getItem('mossLastJob');
+    let active=null;
+    if(last){active=d.jobs.find(j=>j.id===last)}
+    // 只显示正在“转写中”的任务; 排队中不显示当前任务页 (用户要求)
+    if(!active||active.status==='done'||active.status==='queued'){active=(d.jobs||[]).find(j=>j.status==='running')}
+    if(active){
+      _followedRunningId=active.id; _userOpenedJobId=active.id;  // 运行中任务优先
+      renderActive(active, false);
+    }else{
+      // 无 run/queued: 若此前跟随的运行中任务刚完成 → 完成卡(autoReturn=true, 内部2s回上传)
+      const justDone=(_followedRunningId&&(d.jobs||[]).find(j=>j.id===_followedRunningId&&j.status==='done'))||null;
+      if(justDone){ _followedRunningId=null; renderActive(justDone, true); }
+      else{
+        // 否则: 没有未完成任务 → 第一个卡片始终显示“上传录音”, 不显示当前任务卡
+        // 用户点任务队列里的已完成文件, 结果在 resultBlock 展示, 第一个卡片保持上传
+        renderActive(null, false);
+      }
+    }
+    return d;
+  }catch(e){return null}
+}
+$('cancel').addEventListener('click',async()=>{
+  // 明确: 弹出对话框确认“是否取消当前任务”, 点是才取消当前正在转写的任务, 后续排队任务再依次开始
+  if(!confirm('确定取消当前任务？\n取消后，排队中的任务将依次开始。'))return;
+  const d=await refresh();
+  const act=(d.jobs||[]).find(j=>j.status==='running');  // 当前卡显示的就是这个正在转写的任务
+  if(act){await fetch('/api/jobs/'+act.id+'/cancel',{method:'POST'});refresh()}
+});
+$('dl-txt').addEventListener('click',e=>{
+  let txt=lastText;
+  if(lastSegs.length)txt=lastSegs.map(s=>'['+fmtTs(s.start)+'-'+fmtTs(s.end)+'] '+s.speaker+': '+s.text).join('\n');
+  const a=$('dl-txt');a.href=URL.createObjectURL(new Blob(['\ufeff'+txt],{type:'text/plain;charset=utf-8'}));
+});
+$('dl-srt').addEventListener('click',e=>{
+  const srt=lastSegs.map((s,i)=>(i+1)+'\n'+srtTs(s.start)+' --> '+srtTs(s.end)+'\n'+s.speaker+': '+s.text).join('\n\n');
+  const a=$('dl-srt');a.href=URL.createObjectURL(new Blob(['\ufeff'+srt],{type:'text/plain;charset=utf-8'}));
+});
+
+/* ===== 全文复制 ===== */
+function legacyCopy(txt){
+  const ta=document.createElement('textarea');
+  ta.value=txt;
+  ta.setAttribute('readonly','');
+  ta.style.position='fixed';
+  ta.style.top='-9999px';
+  ta.style.opacity='0';
+  document.body.appendChild(ta);
+  const sel=document.getSelection();
+  const oldRange=sel&&sel.rangeCount>0?sel.getRangeAt(0):null;
+  ta.select();
+  ta.setSelectionRange(0,txt.length);
+  let ok=false;
+  try{ok=document.execCommand('copy');}catch(e){ok=false;}
+  document.body.removeChild(ta);
+  if(oldRange&&sel){sel.removeAllRanges();sel.addRange(oldRange);}
+  return ok;
+}
+async function copyText(txt){
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    try{await navigator.clipboard.writeText(txt);return true;}catch(e){/* 降级 */}
+  }
+  return legacyCopy(txt);
+}
+$('copyBtn').addEventListener('click',async()=>{
+  if(editing){if(!confirm('正在编辑中，是否放弃修改并复制原始文本？'))return;}
+  let txt=lastText;
+  if(lastSegs.length)txt=lastSegs.map(s=>'['+fmtTs(s.start)+'-'+fmtTs(s.end)+'] '+s.speaker+': '+s.text).join('\n');
+  const ok=await copyText(txt);
+  if(ok){
+    const btn=$('copyBtn');
+    const orig=btn.innerHTML;
+    btn.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+    btn.style.color='var(--success)';
+    setTimeout(()=>{btn.innerHTML=orig;btn.style.color='';},1200);
+  }else{
+    alert('复制失败，请手动选择文本复制');
+  }
+});
+
+// ===== 结果区播放/暂停按钮 (req 4): 第一次点从头播, 已选段时间则切换暂停/继续 =====
+function setPlayIcon(playing){ // playing=true 显示暂停图标; false 显示播放图标
+  const p=$('playIcon'), q=$('pauseIcon');
+  if(!p||!q)return;
+  p.style.display=playing?'none':'';
+  q.style.display=playing?'':'none';
+}
+function updatePlayBtn(){ // 根据 audioCtl 状态更新图标
+  if(!audioCtl){ setPlayIcon(false); return; }
+  const a=audioCtl.audio;
+  setPlayIcon(!a.paused);
+}
+$('playBtn').addEventListener('click',e=>{
+  e.stopPropagation();
+  // 已选到具体时间段在播 → 作为暂停/继续开关
+  if(audioCtl && audioCtl.jid===currentJobId && lastSegs.length && !audioCtl.audio.paused){
+    audioCtl.audio.pause(); setPlayIcon(false); return;
+  }
+  // 已暂停在某个时间点 → 继续
+  if(audioCtl && audioCtl.jid===currentJobId && audioCtl.audio.paused && audioCtl.idx<lastSegs.length){
+    audioCtl.audio.play().then(()=>setPlayIcon(true)).catch(()=>{ playFrom(0); }); return;
+  }
+  // 默认: 从头播放 (index 0); 若用户之前点过某句, 也从该句继续
+  playFrom(0); setPlayIcon(true);
+});
+
+function syncEditBtn(){
+  const btn=$('editBtn');
+  btn.innerHTML=editing?CHECK_ICON:EDIT_ICON;
+  btn.title=editing?'保存修改':'编辑转写结果';
+  btn.style.color=editing?'var(--success)':'';
+}
+function stripPaste(e){
+  e.preventDefault();
+  const text=(e.clipboardData||window.clipboardData).getData('text/plain');
+  document.execCommand('insertText',false,text);
+}
+async function saveEdits(){
+  const last=localStorage.getItem('mossLastJob');
+  if(!last)return;
+  let payload=null;
+  if(lastSegs.length){
+    const spans=outEl.querySelectorAll('.seg-text[data-idx]');
+    const segs=lastSegs.map((s,i)=>{
+      const el=[].find.call(spans,x=>parseInt(x.dataset.idx)===i);
+      return {...s,text:el?el.innerText:s.text};
+    });
+    payload={segments:segs};
+  }else{
+    const el=outEl.querySelector('.seg-text[data-idx="-1"]');
+    if(el)payload={text:el.innerText};
+  }
+  if(!payload)return;
+  try{
+    const r=await fetch('/api/jobs/'+last,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const d=await r.json();
+    if(!r.ok)throw new Error(d.error||('HTTP '+r.status));
+    if(payload.segments){lastSegs=payload.segments;lastText=lastSegs.map(s=>'['+fmtTs(s.start)+'-'+fmtTs(s.end)+'] '+s.speaker+': '+s.text).join('\n');}
+    else{lastText=payload.text;}
+    editing=false;renderResult({segments:lastSegs.length?lastSegs:null,text:lastText});
+    const btn=$('editBtn');btn.style.color='var(--success)';setTimeout(()=>{btn.style.color='';},800);
+  }catch(err){
+    alert('保存失败: '+err.message);
+  }
+}
+$('editBtn').addEventListener('click',async()=>{
+  if(!editing){
+    editing=true;renderResult({segments:lastSegs.length?lastSegs:null,text:lastText});
+    const first=outEl.querySelector('.seg-text');if(first){first.focus();}
+    outEl.addEventListener('paste',stripPaste);
+  }else{
+    if(confirm('是否确认保存对转写文本的修改？')){
+      await saveEdits();
+      outEl.removeEventListener('paste',stripPaste);
+    }else{
+      editing=false;renderResult({segments:lastSegs.length?lastSegs:null,text:lastText});
+      outEl.removeEventListener('paste',stripPaste);
+    }
+  }
+});
+
+renderPending();  // 初始化待上传列表
+refresh();
+let refreshTimer=setInterval(refresh,pollMs);
+</script>
+</body>
+</html>
