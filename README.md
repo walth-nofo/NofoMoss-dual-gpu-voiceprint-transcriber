@@ -47,6 +47,8 @@ MOSS 自身具备基于文本逻辑的角色识别, 但分段后各段独立推�
 
 ![NofoMoss 双卡声纹本地录音转写工具 Web UI](docs/screenshots/web-ui.jpg)
 
+> 注：上图为**初版 UI**（`frontend/moss_web_frontend.html`）。v2.0.0 的「方案 A」重设计见 `frontend/moss-ui-scheme-a.html`（点右上角齿轮可切换强调色），旧版保留可回退。
+
 ## 架构总览
 
 ```
@@ -138,3 +140,4 @@ NofoMoss-dual-gpu-voiceprint-transcriber/
 
 - 服务层: 见 LICENSE (与上游共同遵守)
 - 上游模型: 遵循 MOSS-Transcribe-Diarize 原始许可
+
