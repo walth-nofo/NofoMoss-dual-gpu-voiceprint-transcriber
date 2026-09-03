@@ -9,6 +9,21 @@
 > 上游底层模型/推理: [OpenMOSS/MOSS-Transcribe-Diarize](https://github.com/OpenMOSS/MOSS-Transcribe-Diarize)
 > 本仓库只含服务层 + 部署配置, **不含任何录音或转写数据**。
 
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
+[![Platform](https://img.shields.io/badge/platform-Linux-blue)](https://github.com/walth-nofo/NofoMoss-dual-gpu-voiceprint-transcriber)
+[![Python](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org)
+[![Local-first](https://img.shields.io/badge/privacy-%E6%9C%AC%E5%9C%B0%E5%A4%84%E7%90%86-2F7A55)](https://github.com/walth-nofo/NofoMoss-dual-gpu-voiceprint-transcriber)
+
+## 特性一览
+
+- **双卡并行转写**：2×GPU 各跑独立模型实例，长音频分段（≈810s/段）并行推理，比单卡快约 50%
+- **角色分离**：跨段声纹聚类，统一同人角色标识（G01 / G02 …）
+- **方言支持**：实测对四川话识别率较高，重叠语音也能按角色分别转译
+- **全程本地处理**：录音不上传任何第三方，数据不出本机
+- **多文件顺序转写**：批量文件按添加顺序依次处理，进度可见
+
+> 前端重设计（方案 A）已内置「强调色」可调选项，见 `frontend/moss-ui-scheme-a.html`（点右上角齿轮切换配色）；旧版 `frontend/moss_web_frontend.html` 保留可回退。
+
 ## 设计背景
 
 本项目实测部署环境为老架构: Ubuntu + 2×RTX 2080 Ti 22GB 魔改版(NVLink 桥接) + i7-4790K + Z97 主板 + 32GB DDR3 内存。
